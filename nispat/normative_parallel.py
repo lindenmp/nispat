@@ -36,7 +36,7 @@ def execute_nm(processing_dir,
                testrespfile_path=None,
                alg='gpr',
                configparam=None,
-               cluster_spec='torque',
+               cluster_spec='m3',
                binary=False,
                log_path=None):
 
@@ -125,6 +125,21 @@ def execute_nm(processing_dir,
                             log_path=log_path,
                             memory=memory,
                             duration=duration)
+                elif cluster_spec is 'm3':
+                    bashwrap_nm_m3(processing_dir=batch_processing_dir,
+                                python_path=python_path,
+                                normative_path=normative_path,
+                                job_name=batch_job_name,
+                                covfile_path=covfile_path,
+                                respfile_path=batch_respfile_path,
+                                duration=duration,
+                                memory=memory,
+                                cv_folds=cv_folds,
+                                testcovfile_path=testcovfile_path,
+                                testrespfile_path=batch_testrespfile_path,
+                                alg=alg,
+                                configparam=configparam)
+                    sbatch_nm(job_path=batch_job_path)
                 elif cluster_spec is 'new':
                     # this part requires addition in different envioronment [
                     bashwrap_nm(processing_dir=batch_processing_dir)
@@ -153,6 +168,20 @@ def execute_nm(processing_dir,
                             log_path=log_path,
                             memory=memory,
                             duration=duration)
+                elif cluster_spec is 'm3':
+                    bashwrap_nm_m3(processing_dir=batch_processing_dir,
+                                python_path=python_path,
+                                normative_path=normative_path,
+                                job_name=batch_job_name,
+                                covfile_path=covfile_path,
+                                respfile_path=batch_respfile_path,
+                                duration=duration,
+                                memory=memory,
+                                cv_folds=cv_folds,
+                                testcovfile_path=testcovfile_path,
+                                alg=alg,
+                                configparam=configparam)
+                    sbatch_nm(job_path=batch_job_path)
                 elif cluster_spec is 'new':
                     # this part requires addition in different envioronment [
                     bashwrap_nm(processing_dir=batch_processing_dir)
@@ -183,6 +212,21 @@ def execute_nm(processing_dir,
                             log_path=log_path,
                             memory=memory,
                             duration=duration)
+                elif cluster_spec is 'm3':
+                    bashwrap_nm_m3(processing_dir=batch_processing_dir,
+                                python_path=python_path,
+                                normative_path=normative_path,
+                                job_name=batch_job_name,
+                                covfile_path=covfile_path,
+                                respfile_path=batch_respfile_path,
+                                memory=memory,
+                                duration=duration,
+                                cv_folds=cv_folds,
+                                testcovfile_path=testcovfile_path,
+                                testrespfile_path=testrespfile_path,
+                                alg=alg,
+                                configparam=configparam)
+                    sbatch_nm(job_path=batch_job_path)
                 elif cluster_spec is 'new':
                     # this part requires addition in different envioronment [
                     bashwrap_nm(processing_dir=batch_processing_dir)
@@ -773,3 +817,81 @@ def rerun_nm(processing_dir,
 
 # COPY the rotines above here and aadapt those to your cluster
 # bashwarp_nm; qsub_nm; rerun_nm
+
+def bashwrap_nm_m3(processing_dir, python_path, normative_path, job_name,
+                covfile_path, respfile_path, duration, memory,
+                cv_folds=None, testcovfile_path=None,
+                testrespfile_path=None, alg=None, configparam=None):
+
+    # import of necessary modules
+    import os
+
+    # change to processing dir
+    os.chdir(processing_dir)
+    output_changedir = ['cd ' + processing_dir + '\n']
+
+    # sets bash environment if necessary
+    bash_lines = '#!/bin/bash\n'
+    bash_sbatch = '#SBATCH --job-name=' + job_name + ' \n#SBATCH --account=kg98 \n#SBATCH --ntasks=1 \n#SBATCH --cpus-per-task=1 \n#SBATCH --time=' + duration + ' \n#SBATCH --mem-per-cpu=' + memory + ' \n'
+    bash_m3node = 'echo "Running on `hostname` at `date`"\n'
+    bash_cores = 'export OMP_NUM_THREADS=1\n'
+    bash_pysetup = 'source /home/lindenmp/virtual_env/NormativeNeuroDev_CrossSec_DWI/bin/activate\nmodule load python/3.7.3-system\n'
+    bash_environment = [bash_lines + bash_sbatch + bash_m3node + bash_cores + bash_pysetup]
+
+    # creates call of function for normative modelling
+    if testrespfile_path is not None:
+        if testcovfile_path is not None:
+            if cv_folds is not None:
+                raise(ValueError, """If the testrespfile_path and
+                                  testcovfile_path are not specified
+                                  cv_folds must be equal to None""")
+            else:
+                job_call = [python_path + ' ' + normative_path + ' -c ' +
+                            covfile_path + ' -t ' + testcovfile_path + ' -r ' +
+                            testrespfile_path]
+
+    if testrespfile_path is None:
+        if testcovfile_path is None:
+            if cv_folds is not None:
+                job_call = [python_path + ' ' + normative_path + ' -c ' +
+                            covfile_path + ' -k ' + str(cv_folds)]
+            else:
+                raise(ValueError, """If the testresponsefile_path and
+                                  testcovfile_path are specified cv_folds
+                                  must be larger than or equal to two(2)""")
+
+    if testrespfile_path is None:
+        if testcovfile_path is not None:
+            if cv_folds is None:
+                job_call = [python_path + ' ' + normative_path + ' -c ' +
+                            covfile_path + ' -t ' + testcovfile_path]
+            else:
+                raise(ValueError, """If the test response file is and
+                                  testcovfile is not specified cv_folds
+                                  must be NONE""")
+    # add algorithm-specific parameters
+    if alg is not None:
+        job_call = [job_call[0] + ' -a ' + alg]
+        if configparam is not None:
+            job_call = [job_call[0] + ' -x ' + str(configparam)]
+    
+    # add responses file
+    job_call = [job_call[0] + ' ' + respfile_path]
+    
+    # writes bash file into processing dir
+    with open(processing_dir + job_name, 'w') as bash_file:
+        bash_file.writelines(bash_environment + output_changedir + job_call + [" | ts \n"])
+
+    # changes permissoins for bash.sh file
+    os.chmod(processing_dir + job_name, 0o700)
+
+def sbatch_nm(job_path):
+    # import of necessary modules
+    from subprocess import call
+
+    # created qsub command
+    sbatch_call = ['sbatch ' + job_path]
+
+    # submits job to cluster
+    call(sbatch_call, shell=True)
+

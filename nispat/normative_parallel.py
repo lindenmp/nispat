@@ -828,7 +828,7 @@ def bashwrap_nm_m3(processing_dir, python_path, normative_path, job_name,
 
     # sets bash environment if necessary
     bash_lines = '#!/bin/bash\n'
-    bash_sbatch = '#SBATCH --job-name=' + job_name + ' \n#SBATCH --account=kg98 \n#SBATCH --ntasks=1 \n#SBATCH --cpus-per-task=1 \n#SBATCH --time=' + duration + ' \n#SBATCH --mem-per-cpu=' + memory + ' \n'
+    bash_sbatch = '#SBATCH --job-name=' + job_name + ' \n#SBATCH --account=dq13 \n#SBATCH --ntasks=1 \n#SBATCH --cpus-per-task=1 \n#SBATCH --time=' + duration + ' \n#SBATCH --mem-per-cpu=' + memory + ' \n'
     bash_m3node = 'echo "Running on `hostname` at `date`"\n'
     bash_cores = 'export OMP_NUM_THREADS=1\n'
     bash_pysetup = 'source /home/lindenmp/virtual_env/NormativeNeuroDev_CrossSec_DWI/bin/activate\nmodule load python/3.7.3-system\n'

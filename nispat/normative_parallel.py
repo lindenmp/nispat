@@ -109,7 +109,7 @@ def execute_nm(processing_dir,
                                            'testresp_batch_' +
                                            str(n) + file_extentions)
                 batch_job_path = batch_processing_dir + batch_job_name
-                if cluster_spec is 'torque':
+                if cluster_spec is 'cubica':
                     bashwrap_nm(processing_dir=batch_processing_dir,
                                 python_path=python_path,
                                 normative_path=normative_path,
@@ -153,7 +153,7 @@ def execute_nm(processing_dir,
                 batch_respfile_path = (batch_processing_dir + 'resp_batch_' +
                                        str(n) + file_extentions)
                 batch_job_path = batch_processing_dir + batch_job_name
-                if cluster_spec is 'torque':
+                if cluster_spec is 'cubica':
                     bashwrap_nm(processing_dir=batch_processing_dir,
                                 python_path=python_path,
                                 normative_path=normative_path,
@@ -196,7 +196,7 @@ def execute_nm(processing_dir,
                                        'resp_batch_' + str(n) +
                                        file_extentions)
                 batch_job_path = batch_processing_dir + batch_job_name
-                if cluster_spec is 'torque':
+                if cluster_spec is 'cubica':
                     bashwrap_nm(processing_dir=batch_processing_dir,
                                 python_path=python_path,
                                 normative_path=normative_path,
@@ -640,7 +640,7 @@ def bashwrap_nm(processing_dir,
                 configparam=None):
 
     """ This function wraps normative modelling into a bash script to run it
-    on a torque cluster system.
+    on a cubica cluster system.
 
     ** Input:
         * processing_dir     -> Full path to the processing dir
@@ -666,7 +666,7 @@ def bashwrap_nm(processing_dir,
         * A bash.sh file containing the commands for normative modelling saved
         to the processing directory
 
-    witten by (primarily) T Wolfers
+    witten by (primarily) T Wolfers, (adapted) L Parkes
     """
 
     # import of necessary modules
@@ -735,7 +735,7 @@ def qsub_nm(job_path,
             memory,
             duration):
     """
-    This function submits a job.sh scipt to the torque custer using the qsub
+    This function submits a job.sh scipt to the cubica custer using the qsub
     command.
 
     ** Input:
@@ -746,9 +746,9 @@ def qsub_nm(job_path,
                            HH:MM:SS for example 01:01:01
 
     ** Output:
-        * Submission of the job to the (torque) cluster
+        * Submission of the job to the (cubica) cluster
 
-    witten by (primarily) T Wolfers, (adapted) SM Kia
+    witten by (primarily) T Wolfers, (adapted) SM Kia, (adapted) L Parkes
     """
 
     # import of necessary modules
@@ -756,10 +756,10 @@ def qsub_nm(job_path,
 
     # created qsub command
     if log_path is None:
-        qsub_call = ['echo ' + job_path + ' | qsub -N ' + job_path + ' -l ' +
+        qsub_call = ['echo ' + job_path + ' | qsub ' + job_path + ' -l ' +
                      'procs=1' + ',mem=' + memory + ',walltime=' + duration]
     else:
-        qsub_call = ['echo ' + job_path + ' | qsub -N ' + job_path +
+        qsub_call = ['echo ' + job_path + ' | qsub ' + job_path +
                      ' -l ' + 'procs=1' + ',mem=' + memory + ',walltime=' + duration +
                      ' -o ' + log_path + ' -e ' + log_path]
 
